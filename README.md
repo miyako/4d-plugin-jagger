@@ -7,7 +7,8 @@
 
 ## 変更箇所
 
-* `stdin` `stdout`を`dup2`でリダイレクト
+* `stdin`を`dup2`で代用
+* `stdout`を`std::ostringstream`で代用
 * Windows対応
   * `mmap`
   * `munmap`
