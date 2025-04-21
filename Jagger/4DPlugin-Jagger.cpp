@@ -34,7 +34,6 @@
 #define __open ::open
 #define __lseek ::lseek
 #define _close ::close
-#define __pipe pipe
 #else
 //#define __pipe(fd) _pipe(fd, jagger::PIPE_SIZE, _O_BINARY)
 #endif
@@ -321,6 +320,8 @@ namespace jagger {
           }
           output << std::endl;
       }
+    
+      output << std::flush;
     }
   };
 }
@@ -541,9 +542,9 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         // --- Redirect stdin ---
         int stdin_pipe[2];
 #if VERSIONMAC
-        __pipe(stdin_pipe);
+        pipe(stdin_pipe);
 #else
-        _pipe(fd, u8.size(), _O_BINARY)
+        _pipe(stdin_pipe, u8.size() + 1, _O_BINARY);
 #endif
         write(stdin_pipe[1], u8.c_str(), u8.size());
         close(stdin_pipe[1]);  // simulate EOF
