@@ -1,3 +1,6 @@
 Jagger/build/*
 Jagger/test/userPreferences.*
 Jagger/test/Project/DerivedData/methodAttributes.json
+Jagger/test/Data/data.journal
+Jagger/Jagger.xcodeproj/xcuserdata/miyako.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
+Jagger/Jagger.xcodeproj/project.xcworkspace/xcuserdata/miyako.xcuserdatad/UserInterfaceState.xcuserstate
