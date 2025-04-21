@@ -19,6 +19,6 @@
 
 ```4d
 var $model : 4D.Folder
-$model:=Jagger get model  //default model is embedded in plugin
+$model:=Jagger get model()  //default model is embedded in plugin
 $model:=Jagger set model(Folder("/RESOURCES/kyoto+kwdlc"))
 ```
