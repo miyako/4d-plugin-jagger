@@ -14,7 +14,7 @@
         },
         {
             "theme": "Jagger",
-            "syntax": "Jagger train(&J):J",
+            "syntax": "Jagger train(&J;&J;&J;&J):J",
             "threadSafe": true
         },
         {

@@ -17,9 +17,13 @@
 		<data>
 		C3JQUQG6gnetPLP2kfUpFQ2GY34=
 		</data>
+		<key>Resources/dict/ipadic/dict</key>
+		<data>
+		kOz7/21wVAuJ1IYNqVFmFYXP5I0=
+		</data>
 		<key>Resources/manifest.json</key>
 		<data>
-		ibXpGW7ooIQLU3RiUqPzyd9C1MM=
+		zMIOKIrqsoWRFykpdAlJjHp7NQ4=
 		</data>
 		<key>Resources/model/.DS_Store</key>
 		<data>
@@ -67,11 +71,18 @@
 			F1t7fJdnoMN27ojFekkyRwSrA58XaLHpgs7zhY3gRuI=
 			</data>
 		</dict>
+		<key>Resources/dict/ipadic/dict</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+aRqaL3w5/IPYOV2iF1rYQgymDrAVI11FHGdtchSkM0=
+			</data>
+		</dict>
 		<key>Resources/manifest.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			wkCqpwLWNEfbOs9+JTfoX6YL8vVC8PgEfJrMXwldLPI=
+			2jRt8CSkD1lqhUPMhVm90vhw2pnFcDgUOw6S5EN7VWE=
 			</data>
 		</dict>
 		<key>Resources/model/kyoto+kwdlc/patterns.c2i</key>

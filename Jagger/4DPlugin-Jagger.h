@@ -14,6 +14,8 @@
 #include "4DPluginAPI.h"
 #if VERSIONMAC
 #import <Cocoa/Cocoa.h>
+#else
+#include <Shlobj.h>
 #endif
 
 #include "jagger.h"
