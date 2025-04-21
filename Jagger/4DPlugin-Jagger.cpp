@@ -1014,7 +1014,7 @@ static bool create_folder(std::string& m) {
     [fm release];
 #else
     wchar_t    buf[_MAX_PATH];
-    if(MultiByteToWideChar(CP_UTF8, 0, m, -1, (LPWSTR)buf, _MAX_PATH))
+    if(MultiByteToWideChar(CP_UTF8, 0, m.c_str(), -1, (LPWSTR)buf, _MAX_PATH))
     {
         success = SHCreateDirectory(NULL, (PCWSTR)buf);
     }

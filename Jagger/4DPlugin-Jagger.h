@@ -16,6 +16,7 @@
 #import <Cocoa/Cocoa.h>
 #else
 #include <Shlobj.h>
+#include <chrono>
 #endif
 
 #include "jagger.h"
