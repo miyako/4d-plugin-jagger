@@ -4,12 +4,12 @@
     "commands": [
         {
             "theme": "Jagger",
-            "syntax": "Jagger split(&T):T",
+            "syntax": "Jagger split(&T):C",
             "threadSafe": true
         },
         {
             "theme": "Jagger",
-            "syntax": "Jagger tokenize(&T):T",
+            "syntax": "Jagger tokenize(&T):C",
             "threadSafe": true
         },
         {

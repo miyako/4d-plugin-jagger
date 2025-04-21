@@ -269,7 +269,7 @@ namespace jagger {
               }
           //writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
             if(TAGGING) {
-                output << "EOS\n";
+                output << "EOS";
             }
             output << std::endl;
 
@@ -296,7 +296,7 @@ namespace jagger {
               }
               else{
 //                  writer.write (" ", 1);
-                  output << " ";
+                  output << "\n";
               }
           }
           finfo = _p2f[s.id];
@@ -316,7 +316,7 @@ namespace jagger {
           }
 //        writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
           if(TAGGING) {
-              output << "EOS\n";
+              output << "EOS";
           }
           output << std::endl;
       }
@@ -529,6 +529,38 @@ void Jagger_set_model(PA_PluginParameters params) {
     PA_ReturnObject(params, path_to_folder_object(model));
 }
 
+static PA_CollectionRef split_string(const PA_Unichar *str, const char *delimiter, PA_long32 flag) {
+    
+    C_TEXT t;
+    t.setUTF8String((const uint8_t *)delimiter, (uint32_t)strlen(delimiter));
+    
+    PA_Variable    cbparams[3];
+    cbparams[0] = PA_CreateVariable(eVK_Unistring);
+    cbparams[1] = PA_CreateVariable(eVK_Longint);
+    cbparams[2] = PA_CreateVariable(eVK_Longint);
+    
+    PA_Unistring text = PA_CreateUnistring((PA_Unichar *)str);
+    PA_Unistring delm = PA_CreateUnistring((PA_Unichar *)t.getUTF16StringPtr());
+    PA_SetStringVariable(&cbparams[0], &text);
+    PA_SetStringVariable(&cbparams[1], &delm);
+    PA_SetLongintVariable(&cbparams[2], flag);
+    PA_Variable collection = PA_ExecuteCommandByID(1554 /*Split string*/, cbparams, 3);
+    PA_ClearVariable(&cbparams[0]);//text belongs to variable. no need to dispose
+    PA_ClearVariable(&cbparams[1]);//delm belongs to variable. no need to dispose
+    PA_ClearVariable(&cbparams[2]);
+    
+    return PA_GetCollectionVariable(collection);
+}
+
+static void set_object_property(PA_ObjectRef o, const char *key, PA_Variable value) {
+    
+    C_TEXT t;
+    t.setUTF8String((const uint8_t *)key, (uint32_t)strlen(key));
+    PA_Unistring _key = PA_CreateUnistring((PA_Unichar *)t.getUTF16StringPtr());
+    PA_SetObjectProperty(o, &_key, value);
+    PA_DisposeUnistring(&_key);
+}
+
 static void _Jagger(PA_PluginParameters params, bool tagging) {
     
     C_TEXT t;
@@ -588,9 +620,46 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         //close(stdout_pipe[0]);
         
         t.setUTF8String((const uint8_t *)output.str().c_str(), (uint32_t)output.str().length());
+        
+        if (tagging) {
+            
+            PA_CollectionRef lines = split_string(t.getUTF16StringPtr(), "\n", 0);
+            
+            PA_CollectionRef values = PA_CreateCollection();
+            for(PA_long32 i = 0; i < PA_GetCollectionLength(lines); ++i) {
+                PA_Unistring line = PA_GetStringVariable(PA_GetCollectionElement(lines, i));
+                PA_CollectionRef v = split_string(PA_GetUnistring(&line), "\t", 0);
+                if(PA_GetCollectionLength(v) == 2) {
+                    
+                    PA_Variable dic = PA_CreateVariable(eVK_Collection);
+                    PA_Unistring v1 = PA_GetStringVariable(PA_GetCollectionElement(v, 1));
+                    PA_SetCollectionVariable(&dic, split_string(PA_GetUnistring(&v1), ",", 0));
+                    
+                    PA_ObjectRef o = PA_CreateObject();
+                    set_object_property(o, "pos", PA_GetCollectionElement(v, 0));
+                    set_object_property(o, "dic", dic);
+                    PA_ClearVariable(&dic);
+
+                    PA_Variable value = PA_CreateVariable(eVK_Object);
+                    PA_SetObjectVariable(&value, o);
+                    PA_SetCollectionElement(values, PA_GetCollectionLength(values), value);
+                    
+                }else{
+                    break;
+                }
+            }
+            PA_ReturnCollection(params, values);
+            return;
+        }else{
+            
+            PA_ReturnCollection(params, split_string(t.getUTF16StringPtr(), "\n", 3));
+
+            return;
+        }
+        
     }
     
-    PA_ReturnString(params, (PA_Unichar *)t.getUTF16StringPtr());
+    PA_ReturnCollection(params, PA_CreateCollection());
 }
 
 void Jagger_split(PA_PluginParameters params) {
