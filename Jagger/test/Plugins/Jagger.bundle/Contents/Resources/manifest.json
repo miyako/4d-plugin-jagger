@@ -1,0 +1,31 @@
+{
+    "name": "Jagger",
+    "id": 20000,
+    "commands": [
+        {
+            "theme": "Jagger",
+            "syntax": "Jagger split(&T):T",
+            "threadSafe": true
+        },
+        {
+            "theme": "Jagger",
+            "syntax": "Jagger tokenize(&T):T",
+            "threadSafe": true
+        },
+        {
+            "theme": "Jagger",
+            "syntax": "Jagger train(&J):J",
+            "threadSafe": true
+        },
+        {
+            "theme": "Jagger",
+            "syntax": "Jagger set model(&J):J",
+            "threadSafe": true
+        },
+        {
+            "theme": "Jagger",
+            "syntax": "Jagger get model:J",
+            "threadSafe": true
+        }
+    ]
+}

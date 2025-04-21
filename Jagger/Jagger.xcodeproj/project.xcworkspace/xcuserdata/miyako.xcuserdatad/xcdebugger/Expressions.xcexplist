@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "jagger::tagger::run&lt;false, true&gt;:4DPlugin-Jagger.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "! reader.eob ()">
+            </PersistentString>
+            <PersistentString
+               value = "(*reader.ptr () == &apos;\0&apos;)">
+            </PersistentString>
+            <PersistentString
+               value = "TTY">
+            </PersistentString>
+            <PersistentString
+               value = "reader.eob ()">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "jagger::simple_reader::eob:jagger.h">
+         <PersistentStrings>
+            <PersistentString
+               value = "_p == _q">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "jagger::tagger::_read_array:4DPlugin-Jagger.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Jagger_set_model:4DPlugin-Jagger.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "jagger::tagger::run&lt;false, false&gt;:4DPlugin-Jagger.cpp">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
