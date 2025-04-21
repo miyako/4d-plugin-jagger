@@ -20,10 +20,30 @@
   * `open`
   * `lseek`
 
-## 辞書の管理
+## モデルの管理
 
 ```4d
 var $model : 4D.Folder
-$model:=Jagger get model()  //default model is embedded in plugin
+$model:=Jagger get model()  
 $model:=Jagger set model(Folder("/RESOURCES/kyoto+kwdlc"))
+```
+
+デフォルトの`model`はプラグインに収録
+
+## 辞書の更新
+
+```4d
+$model:=Folder(fk desktop folder).folder("custom_model")
+$user:=File("/RESOURCES/user")
+$train:=File("/RESOURCES/train.JAG")
+$status:=Jagger train($model; $train; $user)  //; $dict)
+```
+
+デフォルトの`dict`はプラグインに収録
+
+## 形態素解析
+
+```4d
+$split:=Jagger split("お世話になっております。")
+$tokenize:=Jagger tokenize("お世話になっております。")
 ```
