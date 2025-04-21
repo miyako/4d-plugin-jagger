@@ -302,22 +302,22 @@ static void getResourceDir(std::string &resourcedir) {
     resourcedir += '/';
 #else
     wchar_t    fDrive[_MAX_DRIVE], fDir[_MAX_DIR], fName[_MAX_FNAME], fExt[_MAX_EXT];
-    wchar_t    libmecabPath[_MAX_PATH] = { 0 };
+    wchar_t    bundlePath[_MAX_PATH] = { 0 };
 
-    HMODULE libmecab = GetModuleHandleW(L"Jagger.4DX");
-    if (libmecab) {
-        if (GetModuleFileNameW(libmecab, libmecabPath, _MAX_PATH))
+    HMODULE bundle = GetModuleHandleW(L"Jagger.4DX");
+    if (bundle) {
+        if (GetModuleFileNameW(bundle, bundlePath, _MAX_PATH))
         {
-            _wsplitpath_s(libmecabPath, fDrive, fDir, fName, fExt);
-            std::wstring libmecabParentPath = std::wstring(fDrive) + std::wstring(fDir);
+            _wsplitpath_s(bundlePath, fDrive, fDir, fName, fExt);
+            std::wstring bundleParentPath = std::wstring(fDrive) + std::wstring(fDir);
 
-            _wsplitpath_s(libmecabParentPath.substr(0, libmecabParentPath.length()-1).c_str(), fDrive, fDir, fName, fExt);
-            std::wstring libmecabPath = std::wstring(fDrive) + std::wstring(fDir);
+            _wsplitpath_s(bundleParentPath.substr(0, bundleParentPath.length()-1).c_str(), fDrive, fDir, fName, fExt);
+            std::wstring bundlePath = std::wstring(fDrive) + std::wstring(fDir);
 
-            int len = WideCharToMultiByte(CP_UTF8, 0, libmecabPath.c_str(), -1, NULL, 0, NULL, NULL);
+            int len = WideCharToMultiByte(CP_UTF8, 0, bundlePath.c_str(), -1, NULL, 0, NULL, NULL);
             if (len) {
                 std::vector<uint8_t> buf(len);
-                if (WideCharToMultiByte(CP_UTF8, 0, libmecabPath.c_str(), libmecabPath.size(), (LPSTR)&buf[0], len, NULL, NULL)) {
+                if (WideCharToMultiByte(CP_UTF8, 0, bundlePath.c_str(), bundlePath.size(), (LPSTR)&buf[0], len, NULL, NULL)) {
                     resourcedir =  std::string((const char *)&buf[0]) + "Resources";
                 }
             }
