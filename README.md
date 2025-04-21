@@ -1,3 +1,8 @@
+![version](https://img.shields.io/badge/version-20%2B-E23089)
+![platform](https://img.shields.io/static/v1?label=platform&message=mac-intel%20|%20mac-arm%20|%20win-64&color=blue)
+[![license](https://img.shields.io/github/license/miyako/4d-plugin-jagger)](LICENSE)
+![downloads](https://img.shields.io/github/downloads/miyako/4d-plugin-jagger/total)
+
 # 4d-plugin-jagger
 形態素解析器
 
@@ -7,9 +12,18 @@
 
 ## 変更箇所
 
-* `stdin` `stdout`を`dup2`でリダイレクト
+* `stdin`を`dup2`で代用
+* `stdout`を`std::ostringstream`で代用
 * Windows対応
   * `mmap`
   * `munmap`
   * `open`
   * `lseek`
+
+## 辞書の管理
+
+```4d
+var $model : 4D.Folder
+$model:=Jagger get model()  //default model is embedded in plugin
+$model:=Jagger set model(Folder("/RESOURCES/kyoto+kwdlc"))
+```
