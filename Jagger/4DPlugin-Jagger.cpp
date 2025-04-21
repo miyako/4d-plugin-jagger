@@ -25,7 +25,7 @@
 #include <sstream>
 #include <iostream>
 
-#define PIPE_SIZE BUF_SIZE << 4
+//#define PIPE_SIZE BUF_SIZE << 4
 
 #ifndef _WIN32
 #define _isatty ::isatty
@@ -36,7 +36,7 @@
 #define _close ::close
 #define __pipe pipe
 #else
-#define __pipe(fd) _pipe(fd, jagger::PIPE_SIZE, _O_BINARY)
+//#define __pipe(fd) _pipe(fd, jagger::PIPE_SIZE, _O_BINARY)
 #endif
 
 
@@ -239,7 +239,15 @@ namespace jagger {
       _p2f = static_cast <feat_info_t*> (_read_array (m + ".p2f"));
       _fs  = static_cast <char*> (_read_array (m + ".fs"));
     }
-    void write_feature (simple_writer& writer, const bool concat, const feat_info_t finfo) const {
+      void write_feature (std::ostringstream& output, const bool concat, const feat_info_t finfo) const {
+          IF_COMPACT (output << std::string(&_fs[finfo.core_feat_offset], finfo.core_feat_len));
+        if (concat) { // as unknown words
+          IF_NOT_COMPACT (output << std::string(&_fs[finfo.feat_offset], finfo.core_feat_len));
+            output <<  ",*,*,*\n" << std::endl;
+        } else
+            output << std::string(&_fs[finfo.feat_offset], finfo.feat_len);
+      }
+      void write_feature (simple_writer& writer, const bool concat, const feat_info_t finfo) const {
       IF_COMPACT (writer.write (&_fs[finfo.core_feat_offset], finfo.core_feat_len));
       if (concat) { // as unknown words
         IF_NOT_COMPACT (writer.write (&_fs[finfo.feat_offset], finfo.core_feat_len));
@@ -248,20 +256,31 @@ namespace jagger {
         writer.write (&_fs[finfo.feat_offset], finfo.feat_len);
     }
     template <const bool TAGGING, const bool TTY>
-    void run () const {
+    void run (std::ostringstream& output) const {
       union { struct { uint32_t shift : MAX_PATTERN_BITS, ctype : 4, id : 20; bool concat : 1; }; int r; } s_prev = {}, s = {};
       feat_info_t finfo = { _c2i[CP_MAX + 1] }; // BOS
       simple_reader reader;
-      simple_writer writer;
+//      simple_writer writer;
       for (;! reader.eob ();) {
         if ((*reader.ptr () == '\n')) { // EOS
           if (s_prev.r)
-            if (TAGGING) write_feature (writer, s_prev.concat, finfo);
-          writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
+              if (TAGGING) {
+//                  write_feature (writer, s_prev.concat, finfo);
+                  write_feature (output, s_prev.concat, finfo);
+              }
+          //writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
+            if(TAGGING) {
+                output << "EOS\n";
+            }
+            output << std::endl;
+
           s.shift = 1;
           s_prev.r = 0; // *
           finfo.ti = _c2i[CP_MAX + 1]; // BOS
-          if (TTY) writer.flush (); // line buffering
+            if (TTY) {
+//                writer.flush (); // line buffering
+                output << std::flush;
+            }
             if(reader.eob ()) {
                 break;
             }
@@ -272,23 +291,35 @@ namespace jagger {
               ! (s.concat = (s_prev.ctype == s.ctype && // char type mismatch
                              s_prev.ctype != OTHER &&   // kanji, symbol
                              (s_prev.ctype != KANA || s_prev.shift + s.shift < 18)))) {
-            if (TAGGING)
-              write_feature (writer, s_prev.concat, finfo);
-            else
-              writer.write (" ", 1);
+              if (TAGGING) {
+//                  write_feature (writer, s_prev.concat, finfo);
+                  write_feature (output, s_prev.concat, finfo);
+              }
+              else{
+//                  writer.write (" ", 1);
+                  output << " ";
+              }
           }
           finfo = _p2f[s.id];
           s_prev = s; // *
-          writer.write (reader.ptr (), s.shift);
+//          writer.write (reader.ptr (), s.shift);
+            output << std::string(reader.ptr (), s.shift).c_str();
         }
         reader.advance (s.shift);
-        if (! TTY && ! writer.writable (1 << MAX_FEATURE_BITS)) writer.flush ();
+          if (! TTY /*&& ! writer.writable (1 << MAX_FEATURE_BITS)*/) output << std::flush;/* writer.flush ();*/
         if (TTY && reader.eob ()) reader.read ();
         if (! TTY && ! reader.readable (1 << MAX_PATTERN_BITS)) reader.read ();
       }
       if (s_prev.r) {
-        if (TAGGING) write_feature (writer, s_prev.concat, finfo);
-        writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
+          if (TAGGING) {
+//              write_feature (writer, s_prev.concat, finfo);
+              write_feature (output, s_prev.concat, finfo);
+          }
+//        writer.write (TAGGING ? "EOS\n" : "\n", TAGGING ? 4 : 1);
+          if(TAGGING) {
+              output << "EOS\n";
+          }
+          output << std::endl;
       }
     }
   };
@@ -508,42 +539,52 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         t.copyUTF8String(&u8);
         
         // --- Redirect stdin ---
-            int stdin_pipe[2];
+        int stdin_pipe[2];
+#if VERSIONMAC
+        __pipe(stdin_pipe);
+#else
+        _pipe(fd, u8.size(), _O_BINARY)
+#endif
+        write(stdin_pipe[1], u8.c_str(), u8.size());
+        close(stdin_pipe[1]);  // simulate EOF
         
-            __pipe(stdin_pipe);
-            write(stdin_pipe[1], u8.c_str(), u8.size());
-            close(stdin_pipe[1]);  // simulate EOF
+        int saved_stdin = dup(0);
+        dup2(stdin_pipe[0], 0);
+        close(stdin_pipe[0]);
 
-            int saved_stdin = dup(0);
-            dup2(stdin_pipe[0], 0);
-            close(stdin_pipe[0]);
-
-            // --- Redirect stdout ---
-            int stdout_pipe[2];
-            __pipe(stdout_pipe);
-            int saved_stdout = dup(1);
-            dup2(stdout_pipe[1], 1);
-            close(stdout_pipe[1]);
+        // --- Redirect stdout ---
+        /*
+         int stdout_pipe[2];
+         __pipe(stdout_pipe);
+         int saved_stdout = dup(1);
+         dup2(stdout_pipe[1], 1);
+         close(stdout_pipe[1]);
+         */
         
-        if (tagging) tagger->run <true, true>  (); else tagger->run <false, true>  ();
-
+        //if (tagging) tagger->run <true, true>  (); else tagger->run <false, true>  ();
+        
+        std::ostringstream output;
+        if (tagging) tagger->run <true, true>  (output); else tagger->run <false, true>  (output);
+        
         // --- Restore stdout and stdin ---
-            fflush(stdout);
-            std::cout.flush();
+        /*
+         fflush(stdout);
+         std::cout.flush();
+         dup2(saved_stdout, 1);
+         close(saved_stdout);
+         */
 
-            dup2(saved_stdout, 1);
-            close(saved_stdout);
-
-            dup2(saved_stdin, 0);
-            close(saved_stdin);
+        dup2(saved_stdin, 0);
+        close(saved_stdin);
 
         // --- Read from captured stdout pipe ---
-           std::ostringstream output;
-           char ch;
-           while (read(stdout_pipe[0], &ch, 1) > 0) {
-               output << ch;
-           }
-           close(stdout_pipe[0]);
+        /*
+         char ch;
+         while (read(stdout_pipe[0], &ch, 1) > 0) {
+         output << ch;
+         }
+         */
+        //close(stdout_pipe[0]);
         
         t.setUTF8String((const uint8_t *)output.str().c_str(), (uint32_t)output.str().length());
     }

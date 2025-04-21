@@ -25,14 +25,6 @@
 		<data>
 		Jabu50E3rDyz1zIYN6WzVAAVp30=
 		</data>
-		<key>Resources/model/kyoto+kwdlc/dict</key>
-		<data>
-		kOz7/21wVAuJ1IYNqVFmFYXP5I0=
-		</data>
-		<key>Resources/model/kyoto+kwdlc/patterns</key>
-		<data>
-		y6ojpOpW7EBpHGj3nyPDB8VnXBY=
-		</data>
 		<key>Resources/model/kyoto+kwdlc/patterns.c2i</key>
 		<data>
 		IBmp1TOpje9q0nNOarRlKRiZU8o=
@@ -82,20 +74,6 @@
 			nd3i4FtzTx3XNYk+sDvHyGPsmhmDti7H3VEjF6a9ddM=
 			</data>
 		</dict>
-		<key>Resources/model/kyoto+kwdlc/dict</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			+aRqaL3w5/IPYOV2iF1rYQgymDrAVI11FHGdtchSkM0=
-			</data>
-		</dict>
-		<key>Resources/model/kyoto+kwdlc/patterns</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			W/nMLd5hzquZttrXNA+6g31kcYkX3G5vSi7WgbUW5T8=
-			</data>
-		</dict>
 		<key>Resources/model/kyoto+kwdlc/patterns.c2i</key>
 		<dict>
 			<key>hash2</key>
@@ -128,7 +106,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			xZ0isPdvytfz/ISMhvmTet0RKxwRCg6HeDepN7N2icI=
+			I539tYuXJ6cxi2hPwDHOnNEo8uA9kceb3GLjQExVxTI=
 			</data>
 		</dict>
 	</dict>
