@@ -1,9 +1,10 @@
 //%attributes = {}
-$t:=Jagger split("お世話になっております。")
+var $model : 4D:C1709.Folder
+$model:=Jagger get model  //default model is embedded in plugin
 
-$t:=Jagger tokenize("お世話になっております。")
+$split:=Jagger split("お世話になっております。")
+$tokenize:=Jagger tokenize("お世話になっております。")
 
 If (False:C215)
-	$model:=Jagger get model
 	$model:=Jagger set model(Folder:C1567("/RESOURCES/kyoto+kwdlc"))
 End if 
