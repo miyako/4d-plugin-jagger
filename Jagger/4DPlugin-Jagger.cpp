@@ -25,6 +25,8 @@
 #include <sstream>
 #include <iostream>
 
+#define PIPE_SIZE BUF_SIZE << 4;
+
 #ifndef _WIN32
 #define _isatty ::isatty
 #define _mmap ::mmap
@@ -32,7 +34,11 @@
 #define __open ::open
 #define __lseek ::lseek
 #define _close ::close
+#define _pipe pipe
+#else
+define _pipe(fd) pipe(fd, PIPE_SIZE, _O_BINARY)
 #endif
+
 
 #ifdef _WIN32
 #include "getopt.h"
@@ -503,7 +509,8 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         
         // --- Redirect stdin ---
             int stdin_pipe[2];
-            pipe(stdin_pipe);
+        
+            _pipe(stdin_pipe);
             write(stdin_pipe[1], u8.c_str(), u8.size());
             close(stdin_pipe[1]);  // simulate EOF
 
@@ -513,7 +520,7 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
 
             // --- Redirect stdout ---
             int stdout_pipe[2];
-            pipe(stdout_pipe);
+            _pipe(stdout_pipe);
             int saved_stdout = dup(1);
             dup2(stdout_pipe[1], 1);
             close(stdout_pipe[1]);
