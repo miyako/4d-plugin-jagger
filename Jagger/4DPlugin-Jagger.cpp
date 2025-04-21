@@ -35,7 +35,6 @@
 #define __lseek ::lseek
 #define _close ::close
 #define __pipe pipe
-#define _read read
 #else
 #define __pipe(fd) _pipe(fd, jagger::PIPE_SIZE, _O_BINARY)
 #endif
@@ -541,7 +540,7 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         // --- Read from captured stdout pipe ---
            std::ostringstream output;
            char ch;
-           while (_read(stdout_pipe[0], &ch, 1) > 0) {
+           while (read(stdout_pipe[0], &ch, 1) > 0) {
                output << ch;
            }
            close(stdout_pipe[0]);
