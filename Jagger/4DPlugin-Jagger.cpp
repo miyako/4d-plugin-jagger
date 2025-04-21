@@ -25,7 +25,7 @@
 #include <sstream>
 #include <iostream>
 
-#define PIPE_SIZE BUF_SIZE << 4;
+#define PIPE_SIZE BUF_SIZE << 4
 
 #ifndef _WIN32
 #define _isatty ::isatty
@@ -34,14 +34,15 @@
 #define __open ::open
 #define __lseek ::lseek
 #define _close ::close
-#define _pipe pipe
+#define __pipe pipe
+#define _read read
 #else
-define _pipe(fd) pipe(fd, PIPE_SIZE, _O_BINARY)
+#define __pipe(fd) _pipe(fd, jagger::PIPE_SIZE, _O_BINARY)
 #endif
 
 
 #ifdef _WIN32
-#include "getopt.h"
+//#include "getopt.h"
 #define PROT_READ    0x1  // Pages can be read
 #define PROT_WRITE   0x2  // Pages can be written to
 #define PROT_EXEC    0x4  // Pages can be executed
@@ -510,7 +511,7 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         // --- Redirect stdin ---
             int stdin_pipe[2];
         
-            _pipe(stdin_pipe);
+            __pipe(stdin_pipe);
             write(stdin_pipe[1], u8.c_str(), u8.size());
             close(stdin_pipe[1]);  // simulate EOF
 
@@ -520,7 +521,7 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
 
             // --- Redirect stdout ---
             int stdout_pipe[2];
-            _pipe(stdout_pipe);
+            __pipe(stdout_pipe);
             int saved_stdout = dup(1);
             dup2(stdout_pipe[1], 1);
             close(stdout_pipe[1]);
@@ -540,7 +541,7 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         // --- Read from captured stdout pipe ---
            std::ostringstream output;
            char ch;
-           while (read(stdout_pipe[0], &ch, 1) > 0) {
+           while (_read(stdout_pipe[0], &ch, 1) > 0) {
                output << ch;
            }
            close(stdout_pipe[0]);
