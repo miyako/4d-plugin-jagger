@@ -949,8 +949,8 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         t.setUTF8String((const uint8_t *)output.str().c_str(), (uint32_t)output.str().length());
         
         if (tagging) {
-            
-            PA_CollectionRef lines = split_string(t.getUTF16StringPtr(), "\n", 0);
+                        
+            PA_CollectionRef lines = split_string(t.getUTF16StringPtr(), "\n", 3);
             
             PA_CollectionRef values = PA_CreateCollection();
             for(PA_long32 i = 0; i < PA_GetCollectionLength(lines); ++i) {
@@ -958,19 +958,23 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
                 PA_CollectionRef v = split_string(PA_GetUnistring(&line), "\t", 0);
                 if(PA_GetCollectionLength(v) == 2) {
                     
-                    PA_Variable dic = PA_CreateVariable(eVK_Collection);
-                    PA_Unistring v1 = PA_GetStringVariable(PA_GetCollectionElement(v, 1));
-                    PA_SetCollectionVariable(&dic, split_string(PA_GetUnistring(&v1), ",", 0));
-                    
-                    PA_ObjectRef o = PA_CreateObject();
-                    set_object_property(o, "pos", PA_GetCollectionElement(v, 0));
-                    set_object_property(o, "dic", dic);
-                    PA_ClearVariable(&dic);
+                    PA_Variable pos = PA_GetCollectionElement(v, 0);
+                    PA_Unistring v0 = PA_GetStringVariable(pos);
+                                         
+                    if(PA_GetUnistringLength(&v0) != 0) {
+                        PA_Variable dic = PA_CreateVariable(eVK_Collection);
+                        PA_Unistring v1 = PA_GetStringVariable(PA_GetCollectionElement(v, 1));
+                        PA_SetCollectionVariable(&dic, split_string(PA_GetUnistring(&v1), ",", 0));
+                        
+                        PA_ObjectRef o = PA_CreateObject();
+                        set_object_property(o, "pos", pos);
+                        set_object_property(o, "dic", dic);
+                        PA_ClearVariable(&dic);
 
-                    PA_Variable value = PA_CreateVariable(eVK_Object);
-                    PA_SetObjectVariable(&value, o);
-                    PA_SetCollectionElement(values, PA_GetCollectionLength(values), value);
-                    
+                        PA_Variable value = PA_CreateVariable(eVK_Object);
+                        PA_SetObjectVariable(&value, o);
+                        PA_SetCollectionElement(values, PA_GetCollectionLength(values), value);
+                    }
                 }else{
                     break;
                 }
