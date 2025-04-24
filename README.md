@@ -8,7 +8,7 @@
 
 ## aknowlegements
 
-* http://www.tkl.iis.u-tokyo.ac.jp/~ynaga/jagger/index.ja.html
+* https://www.tkl.iis.u-tokyo.ac.jp/~ynaga/jagger/index.ja.html
 
 ## 変更箇所
 
