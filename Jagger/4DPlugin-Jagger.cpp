@@ -64,7 +64,8 @@ FILE* _fopen(const char* filename, const char* mode)
 #define PAGE_NOACCESS    0x01
 #define MAP_SHARED (FILE_MAP_READ | FILE_MAP_WRITE)
 
-void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
+void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
     HANDLE hFile = INVALID_HANDLE_VALUE;
     if (fd != -1) {
         hFile = (HANDLE)_get_osfhandle(fd);  // Convert file descriptor to HANDLE
@@ -101,12 +102,13 @@ void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset
     return mappedAddr;
 }
 
-void _munmap(void* addr, size_t length) {
+void _munmap(void* addr, size_t length)
+{
     UnmapViewOfFile(addr);
 }
 
-void utf8_to_wide(const char* utf8_str, std::wstring& utf16_str) {
-
+void utf8_to_wide(const char* utf8_str, std::wstring& utf16_str)
+{
     if (utf8_str == NULL) {
         return;
     }
@@ -128,8 +130,8 @@ void utf8_to_wide(const char* utf8_str, std::wstring& utf16_str) {
     return;
 }
 
-void wide_to_utf8(const wchar_t* utf16_str, std::string& utf8_str) {
-
+void wide_to_utf8(const wchar_t* utf16_str, std::string& utf8_str)
+{
     if (utf16_str == NULL) {
         return;
     }
@@ -151,8 +153,8 @@ void wide_to_utf8(const wchar_t* utf16_str, std::string& utf8_str) {
     return;
 }
 
-int __open(const char* utf8_path, int oflag, ...) {
-
+int __open(const char* utf8_path, int oflag, ...)
+{
     std::wstring wide_path;
 
     utf8_to_wide(utf8_path, wide_path);
@@ -179,7 +181,8 @@ int __open(const char* utf8_path, int oflag, ...) {
     return _open_osfhandle((intptr_t)hFile, 0);  // The second argument 0 indicates no extra flags
 }
 
-off_t __lseek(int fd, off_t offset, int whence) {
+off_t __lseek(int fd, off_t offset, int whence)
+{
     // Convert the file descriptor to a Windows HANDLE
     HANDLE hFile = (HANDLE)_get_osfhandle(fd);
 
