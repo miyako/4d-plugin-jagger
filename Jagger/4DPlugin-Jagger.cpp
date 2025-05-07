@@ -108,7 +108,7 @@ void wide_to_utf8(const wchar_t* utf16_str, std::string& utf8_str)
 
     return;
 }
-void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset, const std::string& fn)
+void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
     HANDLE hFile = INVALID_HANDLE_VALUE;
     if (fd != -1) {
@@ -116,38 +116,12 @@ void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset
         if (hFile == INVALID_HANDLE_VALUE) return NULL;  // Invalid file handle
     }
 
-    std::wstring name;
-    utf8_to_wide(fn.c_str(), name);
-    const wchar_t* fileName = PathFindFileName(name.c_str());
-
-    // try to open file mapping
-    HANDLE hMap = OpenFileMapping(
-        FILE_MAP_ALL_ACCESS,
-        FALSE,
-        name.c_str());
-
-    if (hMap == NULL) {
-        //create file mapping
-        BY_HANDLE_FILE_INFORMATION fileInfo;
-        if (GetFileInformationByHandle(hFile, &fileInfo)) {
-            DWORD dwSizeHigh = fileInfo.nFileSizeHigh;
-            DWORD dwSizeLow = fileInfo.nFileSizeLow;
-            hMap = CreateFileMapping(hFile,
-                NULL,
-                PAGE_READWRITE,
-                dwSizeHigh,
-                dwSizeLow,
-                fileName);
-        }
-        if (hMap == NULL) {
-            hMap = CreateFileMapping(hFile,
-                NULL,
-                PAGE_READWRITE,
-                0,
-                0,
-                NULL);
-        }
-    }
+    HANDLE hMap = CreateFileMapping(hFile,
+        NULL,
+        PAGE_READONLY/*PAGE_READWRITE*/,
+        0,
+        0,
+        NULL);
 
     if (hMap == NULL) {
         DWORD lastError = GetLastError();
@@ -156,7 +130,7 @@ void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset
 
     // Create a view of the file (map memory)
     void* mappedAddr = MapViewOfFile(hMap,
-        FILE_MAP_WRITE,
+        FILE_MAP_READ/*FILE_MAP_WRITE*/,
         0,
         0,
         length);
@@ -169,8 +143,7 @@ void* _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset
 
     // Return mapped memory address
     return mappedAddr;
-}
-void _munmap(void* addr, size_t length)
+}void _munmap(void* addr, size_t length)
 {
     UnmapViewOfFile(addr);
 }
