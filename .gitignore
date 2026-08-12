@@ -10,3 +10,4 @@ Jagger/test/Plugins/Jagger.bundle/Contents/Windows64/Jagger.pdb
 Jagger/test/Plugins/Jagger.bundle/Contents/Windows64/Jagger.lib
 Jagger/test/Plugins/Jagger.bundle/Contents/Windows64/Jagger.exp
 Jagger/test/Plugins/Jagger.bundle/Contents/Resources/dict/jumandic-7.0-20130310/dict
+build/*
