@@ -11,6 +11,7 @@
 #include "4DPlugin-Jagger.h"
 
 #include <string>
+#include <mutex>
 
 //for stdIn,stdOut
 #include <sstream>
@@ -233,10 +234,26 @@ namespace jagger {
                 ss << "no such file: " << fn.c_str();
                 throw std::runtime_error(ss.str());
             }
-            const size_t size = __lseek(fd, 0, SEEK_END); // get size
+            const off_t rawSize = __lseek(fd, 0, SEEK_END); // get size
+            if (rawSize <= 0) { // lseek error (-1) or empty file: neither is mappable
+                _close(fd);
+                std::stringstream ss;
+                ss << "empty or unreadable file: " << fn.c_str();
+                throw std::runtime_error(ss.str());
+            }
+            const size_t size = static_cast<size_t>(rawSize);
             __lseek(fd, 0, SEEK_SET);
             void* data = _mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
             _close(fd);
+#ifndef _WIN32
+            if (data == MAP_FAILED) {
+#else
+            if (data == NULL) {
+#endif
+                std::stringstream ss;
+                ss << "mmap failed: " << fn.c_str();
+                throw std::runtime_error(ss.str());
+            }
             _mmaped.push_back(std::make_pair(data, size));
             return data;
         }
@@ -678,6 +695,12 @@ namespace jagger {
 
 std::string model;
 jagger::tagger *tagger = NULL;
+// manifest.json marks every Jagger command threadSafe: true, so 4D may call
+// split/tokenize/train/set model/get model concurrently from multiple threads.
+// This guards the global tagger/model pointers, and the split/tokenize handler
+// also holds it across its stdin-redirection region (stdin, fd 0, is process-wide,
+// not per-thread, so that region cannot safely run concurrently either).
+static std::mutex g_jagger_mutex;
 
 static void getResourceDir(std::string &resourcedir) {
     
@@ -741,7 +764,7 @@ static jagger::tagger *read_model(std::string path) {
             delete tagger;
         }
         return _tagger;
-    }catch (const std::runtime_error& e) {
+    }catch (...) {
         delete _tagger;
     }
     
@@ -815,7 +838,9 @@ static bool _object_to_path(PA_ObjectRef f, std::string& path, int type) {
         pp.setUTF8String((const uint8_t *)"platformPath", 12);
         PA_Unistring PLATFORMPATH = PA_CreateUnistring((PA_Unichar *)pp.getUTF16StringPtr());
         
-        if(PA_GetObjectPropertyType(f, &PLATFORMPATH) == eVK_Unistring) {
+        bool isUnistring = (PA_GetObjectPropertyType(f, &PLATFORMPATH) == eVK_Unistring);
+        
+        if(isUnistring) {
             
             PA_Variable p = PA_GetObjectProperty(f, &PLATFORMPATH);
             PA_Variable    cbparams[2];
@@ -845,10 +870,14 @@ static bool _object_to_path(PA_ObjectRef f, std::string& path, int type) {
             PA_ClearVariable(&_p);//see .h of PA_GetObjectProperty
 #endif
             PA_ClearVariable(&p);//see .h of PA_GetObjectProperty
+            PA_ClearVariable(&folder);//folder is not returned from this function; only its
+                                       //platformPath/path property was needed above
             
+            PA_DisposeUnistring(&PLATFORMPATH);
             return true;
         }
-    
+        
+        PA_DisposeUnistring(&PLATFORMPATH);
     }
     
     return false;
@@ -885,6 +914,7 @@ static PA_ObjectRef path_to_folder_object(std::string& m) {
 
 void Jagger_get_model(PA_PluginParameters params) {
 
+    std::lock_guard<std::mutex> lock(g_jagger_mutex);
     PA_ReturnObject(params, path_to_folder_object(model));
 }
 
@@ -892,8 +922,10 @@ void Jagger_set_model(PA_PluginParameters params) {
 
     std::string path;
     if(folder_object_to_path(PA_GetObjectParameter(params, 1), path)) {
+        std::lock_guard<std::mutex> lock(g_jagger_mutex);
         tagger = read_model(path);
     }
+    std::lock_guard<std::mutex> lock(g_jagger_mutex);
     PA_ReturnObject(params, path_to_folder_object(model));
 }
 
@@ -933,6 +965,12 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
     
     C_TEXT t;
     
+    // manifest.json declares this command threadSafe: true, but stdin (fd 0) is
+    // process-wide, not per-thread, and Jagger_set_model can delete/replace the
+    // global tagger concurrently -- so the redirect+run region below and the
+    // tagger pointer must be serialized against every other Jagger command.
+    std::lock_guard<std::mutex> lock(g_jagger_mutex);
+    
     if(tagger != NULL) {
         PA_Unistring *u16 = PA_GetStringParameter(params, 1);
         t.setUTF16String(u16);
@@ -942,10 +980,16 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         // --- Redirect stdin ---
         int stdin_pipe[2];
 #if VERSIONMAC
-        pipe(stdin_pipe);
+        int pipe_result = pipe(stdin_pipe);
 #else
-        _pipe(stdin_pipe, u8.size() + 1, _O_BINARY);
+        int pipe_result = _pipe(stdin_pipe, static_cast<unsigned int>(u8.size() + 1), _O_BINARY);
 #endif
+        if (pipe_result != 0) {
+            // couldn't create the pipe (e.g. fd exhaustion) -- fail safe rather than
+            // touch stdin_pipe[0]/[1] uninitialized, which could alias an unrelated fd.
+            PA_ReturnCollection(params, PA_CreateCollection());
+            return;
+        }
         write(stdin_pipe[1], u8.c_str(), u8.size());
         close(stdin_pipe[1]);  // simulate EOF
         
@@ -965,7 +1009,15 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
         //if (tagging) tagger->run <true, true>  (); else tagger->run <false, true>  ();
         
         std::ostringstream output;
-        if (tagging) tagger->run <true, true>  (output); else tagger->run <false, true>  (output);
+        bool ranOk = true;
+        try {
+            if (tagging) tagger->run <true, true>  (output); else tagger->run <false, true>  (output);
+        } catch (...) {
+            // Whatever tagger->run() threw, stdin must still be restored below and
+            // PA_Return* must still run -- otherwise the host is left waiting
+            // forever for a return that never comes (see PluginMain's catch-all).
+            ranOk = false;
+        }
         
         // --- Restore stdout and stdin ---
         /*
@@ -986,6 +1038,11 @@ static void _Jagger(PA_PluginParameters params, bool tagging) {
          }
          */
         //close(stdout_pipe[0]);
+        
+        if (!ranOk) {
+            PA_ReturnCollection(params, PA_CreateCollection());
+            return;
+        }
         
         t.setUTF8String((const uint8_t *)output.str().c_str(), (uint32_t)output.str().length());
         
@@ -1098,10 +1155,17 @@ void Jagger_train(PA_PluginParameters params) {
             builder.write_patterns(m + "patterns");
             PA_SetBooleanVariable(&success, 1);
             PA_Variable folder = PA_CreateVariable(eVK_Object);
+            std::lock_guard<std::mutex> lock(g_jagger_mutex);
             PA_SetObjectVariable(&folder, path_to_folder_object(m));
             set_object_property(returnValue, "model", folder);
-        }catch(const std::runtime_error& e){
-            
+            PA_ClearVariable(&folder);
+        }catch(...){
+            // extract_patterns()/write_patterns() can throw std::out_of_range or
+            // std::bad_alloc on malformed/oversized training data -- neither derives
+            // from std::runtime_error, so a narrower catch here would let it fall
+            // through to PluginMain's catch-all and leave the host waiting forever
+            // for the PA_ReturnObject below, since this command declares a return
+            // type (":J" in manifest.json). Fall through and report success=false.
         }
         
     }
